@@ -1,5 +1,5 @@
 using System;
-namespace NewsAPI.Models
+namespace ChatbotAPI.Models
 {
     public class Article
     {
