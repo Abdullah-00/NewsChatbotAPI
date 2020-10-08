@@ -7,99 +7,48 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ChatbotAPI.Data;
 using ChatbotAPI.Models;
+using ChatbotAPI.Clients;
+using Microsoft.Extensions.Options;
 
 namespace ChatbotAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/chatbot")]
     [ApiController]
     public class WatsonController : ControllerBase
     {
+        private readonly IOptions<AppSettings> _appSettings;
         private readonly ChatbotContext _context;
 
-        public WatsonController(ChatbotContext context)
+        public WatsonController(ChatbotContext context, IOptions<AppSettings> appSettings)
         {
+            _appSettings = appSettings;
             _context = context;
-        }
-
-        // GET: api/Watson
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<WatsonPayload>>> GetWatsonPayload()
-        {
-            return await _context.WatsonPayload.ToListAsync();
-        }
-
-        // GET: api/Watson/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<WatsonPayload>> GetWatsonPayload(int id)
-        {
-            var watsonPayload = await _context.WatsonPayload.FindAsync(id);
-
-            if (watsonPayload == null)
-            {
-                return NotFound();
-            }
-
-            return watsonPayload;
-        }
-
-        // PUT: api/Watson/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutWatsonPayload(int id, WatsonPayload watsonPayload)
-        {
-            if (id != watsonPayload.id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(watsonPayload).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!WatsonPayloadExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
         }
 
         // POST: api/Watson
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<WatsonPayload>> PostWatsonPayload(WatsonPayload watsonPayload)
+        public async Task<ActionResult<List<Article>>> PostWatsonPayload(WatsonPayload watsonPayload)
         {
-            _context.WatsonPayload.Add(watsonPayload);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetWatsonPayload", new { id = watsonPayload.id }, watsonPayload);
-        }
-
-        // DELETE: api/Watson/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<WatsonPayload>> DeleteWatsonPayload(int id)
-        {
-            var watsonPayload = await _context.WatsonPayload.FindAsync(id);
-            if (watsonPayload == null)
+            // _context.WatsonPayload.Add(watsonPayload);
+            // await _context.SaveChangesAsync();
+            NewsAPIClient newsAPI = new NewsAPIClient(_appSettings);
+            var articles = new List<Article>();
+            switch (watsonPayload.Action)
             {
-                return NotFound();
+                case WatsonAction.News_Highlights:
+                    articles = await newsAPI.FindNewsHighlights(watsonPayload);
+                    break;
+                case WatsonAction.News_Keyphrase:
+                    return await newsAPI.FindNewsKeyphrase(watsonPayload);
+                    break;
+                default:
+                    return NotFound();
             }
-
-            _context.WatsonPayload.Remove(watsonPayload);
-            await _context.SaveChangesAsync();
-
-            return watsonPayload;
+            if (articles != null)
+                return articles;
+            return NotFound();
         }
 
         private bool WatsonPayloadExists(int id)
