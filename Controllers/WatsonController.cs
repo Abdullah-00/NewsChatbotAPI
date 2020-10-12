@@ -29,26 +29,27 @@ namespace ChatbotAPI.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<List<Article>>> PostWatsonPayload(WatsonPayload watsonPayload)
+        public async Task<ActionResult<WatsonResponse>> PostWatsonPayload(WatsonPayload watsonPayload)
         {
             // _context.WatsonPayload.Add(watsonPayload);
             // await _context.SaveChangesAsync();
+            WatsonResponse response = new WatsonResponse();
             NewsAPIClient newsAPI = new NewsAPIClient(_appSettings);
-            var articles = new List<Article>();
             switch (watsonPayload.Action)
             {
                 case WatsonAction.News_Highlights:
-                    articles = await newsAPI.FindNewsHighlights(watsonPayload);
+                    response.articles = await newsAPI.FindNewsHighlights(watsonPayload);
+                    response.status = true;
                     break;
                 case WatsonAction.News_Keyphrase:
-                    return await newsAPI.FindNewsKeyphrase(watsonPayload);
+                    response.articles = await newsAPI.FindNewsKeyphrase(watsonPayload);
+                    response.status = true;
                     break;
                 default:
-                    return NotFound();
+                    response.status = false;
+                    break;
             }
-            if (articles != null)
-                return articles;
-            return NotFound();
+            return response;
         }
 
         private bool WatsonPayloadExists(int id)

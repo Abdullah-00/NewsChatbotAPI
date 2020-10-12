@@ -30,7 +30,7 @@ namespace ChatbotAPI.Clients
                     string apiResponse = await response.Content.ReadAsStringAsync();
                     JObject jsonResponse = JObject.Parse(apiResponse);
                     if (!jsonResponse["status"].ToString().Equals("ok"))
-                        return null;
+                        return foundArticles;
                     foundArticles = JsonConvert.DeserializeObject<List<Article>>(jsonResponse["articles"].ToString());
                 }
             }
@@ -48,7 +48,7 @@ namespace ChatbotAPI.Clients
                     string apiResponse = await response.Content.ReadAsStringAsync();
                     JObject jsonResponse = JObject.Parse(apiResponse);
                     if (!jsonResponse["status"].ToString().Equals("ok"))
-                        return null;
+                        return foundArticles;
                     foundArticles = JsonConvert.DeserializeObject<List<Article>>(jsonResponse["articles"].ToString());
                 }
             }
